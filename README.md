@@ -1,4 +1,4 @@
-# 🖥️ Servora
+#  Servora
 
 **Real-Time Server Monitoring Dashboard for Android**
 
@@ -6,7 +6,7 @@ Servora is a sleek, dark-themed Android app that provides real-time monitoring o
 
 ---
 
-## ✨ Features
+##  Features
 
 - **Live Dashboard** — Monitor all servers in one view with auto-refreshing data (every 3 seconds)
 - **Animated Gauges** — Circular CPU, Memory, and Disk gauges with color-coded thresholds (green → amber → red)
@@ -19,13 +19,13 @@ Servora is a sleek, dark-themed Android app that provides real-time monitoring o
 
 ---
 
-## 📱 Screenshots
+##  Screenshots
 
-> _Coming soon — build and run to see the full experience!_
+> coming soon 
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 Servora follows **MVVM** (Model-View-ViewModel) with clean separation of concerns:
 
@@ -50,7 +50,7 @@ com.example.servora/
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -65,7 +65,7 @@ com.example.servora/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -91,7 +91,7 @@ com.example.servora/
 
 ---
 
-## 🎨 Design System
+##  Design System
 
 ### Color Palette
 
@@ -111,7 +111,7 @@ com.example.servora/
 
 ---
 
-## 🗺️ Roadmap
+##  Roadmap
 
 - [ ] Connect to real server APIs via Retrofit
 - [ ] Add authentication (API key / OAuth)
@@ -123,12 +123,10 @@ com.example.servora/
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ---
 
-<p align="center">
-  Built with 💙 using Jetpack Compose
-</p>
+
