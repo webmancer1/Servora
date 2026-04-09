@@ -2,6 +2,7 @@ package com.example.servora.ui.account
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,7 +59,7 @@ import com.example.servora.ui.theme.MonoFontFamily
 import com.example.servora.ui.theme.CoralRed
 
 @Composable
-fun AccountScreen() {
+fun AccountScreen(onSignOut: () -> Unit = {}) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -152,7 +153,7 @@ fun AccountScreen() {
 
         item {
             Spacer(modifier = Modifier.height(24.dp))
-            LogoutButton()
+            LogoutButton(onSignOut = onSignOut)
         }
     }
 }
@@ -433,13 +434,14 @@ private fun AccountDivider() {
 }
 
 @Composable
-private fun LogoutButton() {
+private fun LogoutButton(onSignOut: () -> Unit) {
     val shape = RoundedCornerShape(14.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clip(shape)
+            .clickable { onSignOut() }
             .background(CoralRed.copy(alpha = 0.08f))
             .border(1.dp, CoralRed.copy(alpha = 0.2f), shape)
             .padding(16.dp),
