@@ -194,7 +194,18 @@ fun ServoraNavHost() {
             }
 
             composable("account") {
-                AccountScreen()
+                val authViewModel: com.example.servora.ui.auth.AuthViewModel =
+                    androidx.hilt.navigation.compose.hiltViewModel()
+                AccountScreen(
+                    onSignOut = {
+                        authViewModel.logout()
+                        navController.navigate("dashboard") {
+                            popUpTo(navController.graph.id) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                )
             }
         }
     }
