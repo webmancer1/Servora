@@ -70,6 +70,15 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ServoraNavHost() {
+    val authViewModel: com.example.servora.ui.auth.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    val isCheckingAuth by authViewModel.isCheckingAuth.collectAsState()
+    val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+
+    if (isCheckingAuth) {
+        Box(modifier = Modifier.fillMaxSize().background(DeepNavy))
+        return
+    }
+
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -168,9 +177,33 @@ fun ServoraNavHost() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "dashboard",
+            startDestination = if (isLoggedIn) "dashboard" else "login",
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable("login") {
+                com.example.servora.ui.auth.LoginScreen(
+                    viewModel = authViewModel,
+                    onLoginSuccess = { 
+                        navController.navigate("dashboard") {
+                            popUpTo(0)
+                        }
+                    },
+                    onNavigateToSignUp = { navController.navigate("signup") }
+                )
+            }
+
+            composable("signup") {
+                com.example.servora.ui.auth.SignUpScreen(
+                    viewModel = authViewModel,
+                    onSignUpSuccess = { 
+                        navController.navigate("dashboard") {
+                            popUpTo(0)
+                        }
+                    },
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
             composable("dashboard") {
                 DashboardScreen(
                     onServerClick = { serverId ->
@@ -195,39 +228,13 @@ fun ServoraNavHost() {
             }
 
             composable("account") {
-                val authViewModel: com.example.servora.ui.auth.AuthViewModel =
-                    androidx.hilt.navigation.compose.hiltViewModel()
-                val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
-                
-                if (isLoggedIn) {
-                    AccountScreen(
-                        onSignOut = {
-                            authViewModel.logout()
-                            navController.navigate("dashboard") {
-                                popUpTo(navController.graph.id) {
-                                    inclusive = true
-                                }
-                            }
+                AccountScreen(
+                    onSignOut = {
+                        authViewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo(0)
                         }
-                    )
-                } else {
-                    com.example.servora.ui.auth.LoginScreen(
-                        viewModel = authViewModel,
-                        onLoginSuccess = { /* Automatically navigates due to state change */ },
-                        onNavigateToSignUp = { navController.navigate("signup") }
-                    )
-                }
-            }
-
-            composable("signup") {
-                val authViewModel: com.example.servora.ui.auth.AuthViewModel =
-                    androidx.hilt.navigation.compose.hiltViewModel()
-                com.example.servora.ui.auth.SignUpScreen(
-                    viewModel = authViewModel,
-                    onSignUpSuccess = { 
-                        navController.popBackStack()
-                    },
-                    onNavigateBack = { navController.popBackStack() }
+                    }
                 )
             }
         }
