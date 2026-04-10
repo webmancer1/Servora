@@ -25,6 +25,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -196,15 +197,37 @@ fun ServoraNavHost() {
             composable("account") {
                 val authViewModel: com.example.servora.ui.auth.AuthViewModel =
                     androidx.hilt.navigation.compose.hiltViewModel()
-                AccountScreen(
-                    onSignOut = {
-                        authViewModel.logout()
-                        navController.navigate("dashboard") {
-                            popUpTo(navController.graph.id) {
-                                inclusive = true
+                val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+                
+                if (isLoggedIn) {
+                    AccountScreen(
+                        onSignOut = {
+                            authViewModel.logout()
+                            navController.navigate("dashboard") {
+                                popUpTo(navController.graph.id) {
+                                    inclusive = true
+                                }
                             }
                         }
-                    }
+                    )
+                } else {
+                    com.example.servora.ui.auth.LoginScreen(
+                        viewModel = authViewModel,
+                        onLoginSuccess = { /* Automatically navigates due to state change */ },
+                        onNavigateToSignUp = { navController.navigate("signup") }
+                    )
+                }
+            }
+
+            composable("signup") {
+                val authViewModel: com.example.servora.ui.auth.AuthViewModel =
+                    androidx.hilt.navigation.compose.hiltViewModel()
+                com.example.servora.ui.auth.SignUpScreen(
+                    viewModel = authViewModel,
+                    onSignUpSuccess = { 
+                        navController.popBackStack()
+                    },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }
