@@ -114,7 +114,6 @@ com.example.servora/
 ##  Roadmap
 
 - [ ] Connect to real server APIs via Retrofit
-- [ ] Add authentication (API key / OAuth)
 - [ ] Push notifications for critical alerts
 - [ ] Historical data with persistent storage (Room)
 - [ ] Server grouping and filtering
