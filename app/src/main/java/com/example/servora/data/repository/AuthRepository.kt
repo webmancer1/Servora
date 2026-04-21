@@ -1,6 +1,7 @@
 package com.example.servora.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -73,6 +74,16 @@ class AuthRepository @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(Exception(e.localizedMessage ?: "Invalid login credentials"))
+        }
+    }
+
+    suspend fun signInWithGoogle(idToken: String): Result<Unit> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            firebaseAuth.signInWithCredential(credential).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(Exception(e.localizedMessage ?: "Google Sign-In failed"))
         }
     }
 
