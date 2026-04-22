@@ -58,8 +58,10 @@ import com.example.servora.ui.theme.TextTertiary
 import com.example.servora.ui.theme.MonoFontFamily
 import com.example.servora.ui.theme.CoralRed
 
+import com.example.servora.data.repository.User
+
 @Composable
-fun AccountScreen(onSignOut: () -> Unit = {}) {
+fun AccountScreen(user: User?, onSignOut: () -> Unit = {}) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -71,7 +73,7 @@ fun AccountScreen(onSignOut: () -> Unit = {}) {
         }
 
         item {
-            ProfileCard()
+            ProfileCard(user)
         }
 
         item {
@@ -88,7 +90,7 @@ fun AccountScreen(onSignOut: () -> Unit = {}) {
                 AccountRow(
                     icon = Icons.Default.Email,
                     title = "Email",
-                    value = "admin@servora.io"
+                    value = user?.email ?: "Not Set"
                 )
                 AccountDivider()
                 AccountRow(
@@ -186,7 +188,7 @@ private fun AccountHeader() {
 }
 
 @Composable
-private fun ProfileCard() {
+private fun ProfileCard(user: User?) {
     val shape = RoundedCornerShape(20.dp)
     Box(
         modifier = Modifier
@@ -238,13 +240,13 @@ private fun ProfileCard() {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Alex Morgan",
+                    text = user?.name?.takeIf { it.isNotBlank() } ?: "Guest User",
                     style = MaterialTheme.typography.headlineMedium,
                     color = TextPrimary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "admin@servora.io",
+                    text = user?.email ?: "Unknown Email",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
                 )
