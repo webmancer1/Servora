@@ -74,6 +74,7 @@ fun ServoraNavHost() {
     val authViewModel: com.example.servora.ui.auth.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
     val isCheckingAuth by authViewModel.isCheckingAuth.collectAsState()
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
 
     if (isCheckingAuth) {
         Box(modifier = Modifier.fillMaxSize().background(DeepNavy))
@@ -178,7 +179,7 @@ fun ServoraNavHost() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = if (isLoggedIn) "dashboard" else "login",
+            startDestination = if (isLoggedIn) "dashboard" else "signup",
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("login") {
@@ -230,6 +231,7 @@ fun ServoraNavHost() {
 
             composable("account") {
                 AccountScreen(
+                    user = currentUser,
                     onSignOut = {
                         authViewModel.logout()
                         navController.navigate("login") {
