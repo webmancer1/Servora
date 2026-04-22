@@ -89,12 +89,15 @@ fun LoginScreen(
     val coroutineScope = rememberCoroutineScope()
     val credentialManager = remember { CredentialManager.create(context) }
     
-    val onClickGoogleSignIn = {
+    val onClickGoogleSignIn: () -> Unit = {
         coroutineScope.launch {
             try {
+                val webClientId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+                val serverClientId = if (webClientId != 0) context.getString(webClientId) else "placeholder"
+                
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId(context.getString(com.example.servora.R.string.default_web_client_id))
+                    .setServerClientId(serverClientId)
                     .setAutoSelectEnabled(true)
                     .build()
 
