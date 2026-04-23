@@ -43,6 +43,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.servora.ui.theme.AmberWarning
@@ -412,13 +414,18 @@ private fun AccountRow(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             color = TextPrimary,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.padding(end = 8.dp)
         )
+        Spacer(modifier = Modifier.weight(1f))
         if (value.isNotEmpty()) {
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodySmall.copy(fontFamily = MonoFontFamily),
-                color = TextSecondary
+                color = TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(2f, fill = false)
             )
         }
     }
