@@ -29,21 +29,13 @@ class AuthViewModel @Inject constructor(
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     val isLoggedIn: StateFlow<Boolean> = authRepository.isLoggedIn
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), authRepository.hasUser())
 
     val currentUser: StateFlow<User?> = authRepository.currentUser
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private val _isCheckingAuth = MutableStateFlow(true)
+    private val _isCheckingAuth = MutableStateFlow(false)
     val isCheckingAuth: StateFlow<Boolean> = _isCheckingAuth.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            authRepository.isLoggedIn.collect {
-                _isCheckingAuth.value = false
-            }
-        }
-    }
 
     fun signUp(name: String, email: String, password: String, confirmPassword: String) {
         if (password != confirmPassword) {
