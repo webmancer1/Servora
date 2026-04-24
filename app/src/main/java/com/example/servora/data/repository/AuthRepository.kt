@@ -39,6 +39,10 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    fun hasUser(): Boolean {
+        return firebaseAuth.currentUser != null
+    }
+
     val isLoggedIn: Flow<Boolean> = currentUser.map { it != null }
 
     suspend fun signUp(name: String, email: String, password: String): Result<Unit> {
