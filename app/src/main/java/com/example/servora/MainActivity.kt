@@ -230,10 +230,11 @@ fun ServoraNavHost() {
             }
 
             composable("account") {
+                val accountViewModel: com.example.servora.ui.account.AccountViewModel = androidx.hilt.navigation.compose.hiltViewModel()
                 AccountScreen(
-                    user = currentUser,
+                    viewModel = accountViewModel,
                     onSignOut = {
-                        authViewModel.logout()
+                        accountViewModel.logout()
                         navController.navigate("login") {
                             popUpTo(0)
                         }
