@@ -3,40 +3,15 @@ package com.example.servora.ui.account
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Dns
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,23 +22,43 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.servora.ui.theme.AmberWarning
-import com.example.servora.ui.theme.CardBorder
-import com.example.servora.ui.theme.CardSurface
-import com.example.servora.ui.theme.DeepNavy
-import com.example.servora.ui.theme.ElectricBlue
-import com.example.servora.ui.theme.MintGreen
-import com.example.servora.ui.theme.NeonCyan
-import com.example.servora.ui.theme.TextPrimary
-import com.example.servora.ui.theme.TextSecondary
-import com.example.servora.ui.theme.TextTertiary
-import com.example.servora.ui.theme.MonoFontFamily
-import com.example.servora.ui.theme.CoralRed
-
+import com.example.servora.ui.theme.*
 import com.example.servora.data.repository.User
+import com.example.servora.data.repository.UserSettings
 
 @Composable
-fun AccountScreen(user: User?, onSignOut: () -> Unit = {}) {
+fun AccountScreen(
+    viewModel: AccountViewModel,
+    onSignOut: () -> Unit = {}
+) {
+    val user by viewModel.currentUser.collectAsState()
+    val settings by viewModel.userSettings.collectAsState()
+    
+    var showEditProfileDialog by remember { mutableStateOf(false) }
+    var showRegionDialog by remember { mutableStateOf(false) }
+
+    if (showEditProfileDialog) {
+        EditProfileDialog(
+            currentName = user?.name ?: "",
+            onDismiss = { showEditProfileDialog = false },
+            onSave = { newName ->
+                viewModel.updateDisplayName(newName)
+                showEditProfileDialog = false
+            }
+        )
+    }
+
+    if (showRegionDialog) {
+        RegionSelectionDialog(
+            currentRegion = settings?.dataRegion ?: "US-East",
+            onDismiss = { showRegionDialog = false },
+            onSelect = { region ->
+                viewModel.updateDataRegion(region)
+                showRegionDialog = false
+            }
+        )
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -75,12 +70,15 @@ fun AccountScreen(user: User?, onSignOut: () -> Unit = {}) {
         }
 
         item {
-            ProfileCard(user)
+            ProfileCard(
+                user = user,
+                onEditClick = { showEditProfileDialog = true }
+            )
         }
 
         item {
             Spacer(modifier = Modifier.height(16.dp))
-            StatsRow()
+            StatsRow(apiKeys = settings?.apiKeysCount ?: 0)
         }
 
         item {
@@ -98,13 +96,13 @@ fun AccountScreen(user: User?, onSignOut: () -> Unit = {}) {
                 AccountRow(
                     icon = Icons.Default.Shield,
                     title = "Role",
-                    value = "Administrator"
+                    value = settings?.role ?: "User"
                 )
                 AccountDivider()
                 AccountRow(
                     icon = Icons.Default.Verified,
                     title = "Plan",
-                    value = "Pro"
+                    value = settings?.plan ?: "Free"
                 )
             }
         }
@@ -118,13 +116,15 @@ fun AccountScreen(user: User?, onSignOut: () -> Unit = {}) {
                 AccountRow(
                     icon = Icons.Default.Key,
                     title = "API Keys",
-                    value = "3 active"
+                    value = "${settings?.apiKeysCount ?: 0} active"
                 )
                 AccountDivider()
+                val is2FaEnabled = settings?.twoFactorAuth == true
                 AccountRow(
                     icon = Icons.Default.Security,
                     title = "Two-Factor Auth",
-                    value = "Enabled"
+                    value = if (is2FaEnabled) "Enabled" else "Disabled",
+                    onClick = { viewModel.toggleTwoFactorAuth(!is2FaEnabled) }
                 )
                 AccountDivider()
                 AccountRow(
@@ -144,13 +144,14 @@ fun AccountScreen(user: User?, onSignOut: () -> Unit = {}) {
                 AccountRow(
                     icon = Icons.Default.Notifications,
                     title = "Notification Channels",
-                    value = "Email, Push"
+                    value = settings?.notificationChannels ?: "Email, Push"
                 )
                 AccountDivider()
                 AccountRow(
                     icon = Icons.Default.Cloud,
                     title = "Data Region",
-                    value = "US-East"
+                    value = settings?.dataRegion ?: "US-East",
+                    onClick = { showRegionDialog = true }
                 )
             }
         }
@@ -160,6 +161,89 @@ fun AccountScreen(user: User?, onSignOut: () -> Unit = {}) {
             LogoutButton(onSignOut = onSignOut)
         }
     }
+}
+
+@Composable
+private fun EditProfileDialog(
+    currentName: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var name by remember { mutableStateOf(currentName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = CardSurface,
+        title = {
+            Text(text = "Edit Profile", color = TextPrimary)
+        },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Display Name") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    focusedBorderColor = NeonCyan,
+                    unfocusedBorderColor = CardBorder
+                )
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name) }) {
+                Text("Save", color = NeonCyan)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = TextSecondary)
+            }
+        }
+    )
+}
+
+@Composable
+private fun RegionSelectionDialog(
+    currentRegion: String,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    val regions = listOf("US-East", "US-West", "EU-Central", "AP-South")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = CardSurface,
+        title = {
+            Text(text = "Select Data Region", color = TextPrimary)
+        },
+        text = {
+            Column {
+                regions.forEach { region ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(region) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = region == currentRegion,
+                            onClick = null,
+                            colors = RadioButtonDefaults.colors(selectedColor = NeonCyan)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(text = region, color = TextPrimary)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = TextSecondary)
+            }
+        }
+    )
 }
 
 @Composable
@@ -190,7 +274,7 @@ private fun AccountHeader() {
 }
 
 @Composable
-private fun ProfileCard(user: User?) {
+private fun ProfileCard(user: User?, onEditClick: () -> Unit) {
     val shape = RoundedCornerShape(20.dp)
     Box(
         modifier = Modifier
@@ -272,7 +356,7 @@ private fun ProfileCard(user: User?) {
                     }
                 }
             }
-            IconButton(onClick = {}) {
+            IconButton(onClick = onEditClick) {
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit profile",
@@ -285,7 +369,7 @@ private fun ProfileCard(user: User?) {
 }
 
 @Composable
-private fun StatsRow() {
+private fun StatsRow(apiKeys: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -307,10 +391,10 @@ private fun StatsRow() {
             modifier = Modifier.weight(1f)
         )
         StatChip(
-            value = "12",
-            label = "Alerts",
+            value = apiKeys.toString(),
+            label = "Keys",
             color = AmberWarning,
-            icon = Icons.Default.Notifications,
+            icon = Icons.Default.Key,
             modifier = Modifier.weight(1f)
         )
     }
@@ -387,12 +471,22 @@ private fun AccountSettingsCard(content: @Composable () -> Unit) {
 private fun AccountRow(
     icon: ImageVector,
     title: String,
-    value: String
+    value: String,
+    onClick: (() -> Unit)? = null
 ) {
-    Row(
+    var modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 14.dp)
+    
+    if (onClick != null) {
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 14.dp)
+    }
+
+    Row(
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
