@@ -56,13 +56,18 @@ import com.example.servora.ui.theme.TextSecondary
 import com.example.servora.ui.theme.TextTertiary
 import com.example.servora.ui.theme.MonoFontFamily
 
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.runtime.collectAsState
+import androidx.hilt.navigation.compose.hiltViewModel
+
 @Composable
-fun SettingsScreen() {
-    var pushNotifications by remember { mutableStateOf(true) }
-    var criticalAlerts by remember { mutableStateOf(true) }
-    var soundAlerts by remember { mutableStateOf(false) }
-    var autoRefresh by remember { mutableStateOf(true) }
-    var darkMode by remember { mutableStateOf(true) }
+fun SettingsScreen(
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val settings by viewModel.settings.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -84,80 +89,102 @@ fun SettingsScreen() {
                     icon = Icons.Default.Notifications,
                     title = "Push Notifications",
                     subtitle = "Receive alerts on your device",
-                    checked = pushNotifications,
-                    onCheckedChange = { pushNotifications = it }
-                )
-                SettingsDivider()
-                SettingsToggleRow(
-                    icon = Icons.Default.NotificationsActive,
-                    title = "Critical Alerts",
-                    subtitle = "Always notify for critical events",
-                    checked = criticalAlerts,
-                    onCheckedChange = { criticalAlerts = it }
+                    checked = settings.notificationsEnabled,
+                    onCheckedChange = { viewModel.setNotificationsEnabled(it) }
                 )
                 SettingsDivider()
                 SettingsToggleRow(
                     icon = Icons.Default.VolumeUp,
                     title = "Sound Alerts",
                     subtitle = "Play sound for notifications",
-                    checked = soundAlerts,
-                    onCheckedChange = { soundAlerts = it }
+                    checked = settings.soundEnabled,
+                    onCheckedChange = { viewModel.setSoundEnabled(it) }
                 )
             }
         }
 
         item {
-            SettingsSectionTitle("Monitoring")
+            SettingsSectionTitle("Monitoring & Polling")
         }
 
         item {
             SettingsCard {
                 SettingsToggleRow(
-                    icon = Icons.Default.Update,
-                    title = "Auto Refresh",
-                    subtitle = "Automatically update server data",
-                    checked = autoRefresh,
-                    onCheckedChange = { autoRefresh = it }
+                    icon = Icons.Default.Science,
+                    title = "Mock Mode Engine",
+                    subtitle = "Generate simulated metrics for servers without URLs",
+                    checked = settings.mockModeEnabled,
+                    onCheckedChange = { viewModel.setMockModeEnabled(it) }
                 )
                 SettingsDivider()
                 SettingsInfoRow(
                     icon = Icons.Default.Timer,
                     title = "Refresh Interval",
-                    value = "5 seconds"
-                )
-                SettingsDivider()
-                SettingsInfoRow(
-                    icon = Icons.Default.Speed,
-                    title = "Alert Threshold",
-                    value = "90% CPU"
+                    value = "${settings.refreshIntervalMs / 1000} seconds"
                 )
             }
         }
 
         item {
-            SettingsSectionTitle("Appearance")
+            SettingsSectionTitle("Threshold Configuration")
         }
 
         item {
             SettingsCard {
-                SettingsToggleRow(
-                    icon = Icons.Default.DarkMode,
-                    title = "Dark Mode",
-                    subtitle = "Use dark color scheme",
-                    checked = darkMode,
-                    onCheckedChange = { darkMode = it }
-                )
-                SettingsDivider()
-                SettingsInfoRow(
-                    icon = Icons.Default.Palette,
-                    title = "Accent Color",
-                    value = "Neon Cyan"
-                )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("CPU Critical Threshold", style = MaterialTheme.typography.titleSmall, color = TextPrimary)
+                        Text("${settings.thresholds.cpuCritical.toInt()}%", style = MaterialTheme.typography.labelMedium.copy(fontFamily = MonoFontFamily), color = NeonCyan)
+                    }
+                    Slider(
+                        value = settings.thresholds.cpuCritical,
+                        onValueChange = { newCpu ->
+                            viewModel.updateThresholds(
+                                cpuWarn = settings.thresholds.cpuWarning,
+                                cpuCrit = newCpu,
+                                memWarn = settings.thresholds.memoryWarning,
+                                memCrit = settings.thresholds.memoryCritical,
+                                diskWarn = settings.thresholds.diskWarning,
+                                diskCrit = settings.thresholds.diskCritical
+                            )
+                        },
+                        valueRange = 50f..99f,
+                        colors = SliderDefaults.colors(thumbColor = NeonCyan, activeTrackColor = NeonCyan)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Memory Critical Threshold", style = MaterialTheme.typography.titleSmall, color = TextPrimary)
+                        Text("${settings.thresholds.memoryCritical.toInt()}%", style = MaterialTheme.typography.labelMedium.copy(fontFamily = MonoFontFamily), color = MintGreen)
+                    }
+                    Slider(
+                        value = settings.thresholds.memoryCritical,
+                        onValueChange = { newMem ->
+                            viewModel.updateThresholds(
+                                cpuWarn = settings.thresholds.cpuWarning,
+                                cpuCrit = settings.thresholds.cpuCritical,
+                                memWarn = settings.thresholds.memoryWarning,
+                                memCrit = newMem,
+                                diskWarn = settings.thresholds.diskWarning,
+                                diskCrit = settings.thresholds.diskCritical
+                            )
+                        },
+                        valueRange = 50f..99f,
+                        colors = SliderDefaults.colors(thumbColor = MintGreen, activeTrackColor = MintGreen)
+                    )
+                }
             }
         }
 
         item {
-            SettingsSectionTitle("About")
+            SettingsSectionTitle("About & System")
         }
 
         item {
