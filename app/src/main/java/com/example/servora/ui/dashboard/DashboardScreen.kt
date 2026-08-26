@@ -76,9 +76,14 @@ import com.example.servora.ui.theme.TextTertiary
 import com.example.servora.ui.theme.MonoFontFamily
 import kotlinx.coroutines.delay
 
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.IconButton
+
 @Composable
 fun DashboardScreen(
     onServerClick: (String) -> Unit,
+    onAlertsClick: () -> Unit = {},
+    onManageServersClick: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -90,7 +95,11 @@ fun DashboardScreen(
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            DashboardHeader(uiState)
+            DashboardHeader(
+                uiState = uiState,
+                onAlertsClick = onAlertsClick,
+                onManageServersClick = onManageServersClick
+            )
         }
 
         item {
@@ -98,7 +107,12 @@ fun DashboardScreen(
         }
 
         item {
-            SectionTitle(title = "Servers", icon = Icons.Default.Dns)
+            SectionTitle(
+                title = "Servers",
+                icon = Icons.Default.Dns,
+                actionText = "Manage",
+                onActionClick = onManageServersClick
+            )
         }
 
         itemsIndexed(uiState.servers, key = { _, server -> server.id }) { index, server ->
@@ -123,7 +137,12 @@ fun DashboardScreen(
         }
 
         item {
-            SectionTitle(title = "Recent Alerts", icon = Icons.Default.Notifications)
+            SectionTitle(
+                title = "Recent Alerts",
+                icon = Icons.Default.Notifications,
+                actionText = "View All",
+                onActionClick = onAlertsClick
+            )
         }
 
         item {
@@ -133,29 +152,65 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun DashboardHeader(uiState: DashboardUiState) {
-    Column(
+private fun DashboardHeader(
+    uiState: DashboardUiState,
+    onAlertsClick: () -> Unit,
+    onManageServersClick: () -> Unit
+) {
+    val hasUnread = uiState.alerts.any { !it.isRead }
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 16.dp)
-            .padding(top = 40.dp)
+            .padding(top = 40.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = "SERVORA",
-            style = MaterialTheme.typography.displayLarge.copy(
-                fontWeight = FontWeight.Black,
-                letterSpacing = 6.sp,
-                brush = Brush.horizontalGradient(
-                    colors = listOf(NeonCyan, MintGreen)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "SERVORA",
+                style = MaterialTheme.typography.displayLarge.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 6.sp,
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(NeonCyan, MintGreen)
+                    )
                 )
             )
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Real-time Server Monitoring",
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextSecondary
-        )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Real-time Server Monitoring",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onAlertsClick) {
+                Box {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Alerts",
+                        tint = NeonCyan
+                    )
+                    if (hasUnread) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .background(AmberWarning)
+                                .align(Alignment.TopEnd)
+                        )
+                    }
+                }
+            }
+            IconButton(onClick = onManageServersClick) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Manage Servers",
+                    tint = NeonCyan
+                )
+            }
+        }
     }
 }
 
@@ -229,27 +284,47 @@ private fun SummaryChip(
 }
 
 @Composable
-private fun SectionTitle(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+private fun SectionTitle(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    actionText: String? = null,
+    onActionClick: (() -> Unit)? = null
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = NeonCyan,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = TextPrimary
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = NeonCyan,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = TextPrimary
+            )
+        }
+        if (actionText != null && onActionClick != null) {
+            Text(
+                text = actionText,
+                style = MaterialTheme.typography.labelMedium,
+                color = NeonCyan,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable { onActionClick() }
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+        }
     }
 }
+
 
 @Composable
 private fun ServerCard(
