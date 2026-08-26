@@ -43,11 +43,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import android.app.Activity
 import com.example.servora.ui.account.AccountScreen
+import com.example.servora.ui.alerts.AlertsScreen
 import com.example.servora.ui.dashboard.DashboardScreen
 import com.example.servora.ui.detail.ServerDetailScreen
 import com.example.servora.ui.navigation.BottomNavItem
+import com.example.servora.ui.servers.ManageServersScreen
 import com.example.servora.ui.settings.SettingsScreen
+import com.example.servora.notification.NotificationHelper
 import com.example.servora.ui.theme.CardBorder
 import com.example.servora.ui.theme.Charcoal
 import com.example.servora.ui.theme.DeepNavy
@@ -84,6 +90,15 @@ fun ServoraNavHost() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val activity = LocalContext.current as? Activity
+
+    LaunchedEffect(activity?.intent) {
+        val navigateTo = activity?.intent?.getStringExtra(NotificationHelper.EXTRA_NAVIGATE_TO)
+        if (!navigateTo.isNullOrBlank()) {
+            navController.navigate(navigateTo)
+            activity.intent?.removeExtra(NotificationHelper.EXTRA_NAVIGATE_TO)
+        }
+    }
 
     val bottomBarRoutes = BottomNavItem.items.map { it.route }
     val showBottomBar = currentDestination?.route in bottomBarRoutes
@@ -210,7 +225,27 @@ fun ServoraNavHost() {
                 DashboardScreen(
                     onServerClick = { serverId ->
                         navController.navigate("detail/$serverId")
+                    },
+                    onAlertsClick = {
+                        navController.navigate("alerts")
+                    },
+                    onManageServersClick = {
+                        navController.navigate("servers")
                     }
+                )
+            }
+
+            composable("alerts") {
+                AlertsScreen(
+                    onServerClick = { serverId ->
+                        navController.navigate("detail/$serverId")
+                    }
+                )
+            }
+
+            composable("servers") {
+                ManageServersScreen(
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 
