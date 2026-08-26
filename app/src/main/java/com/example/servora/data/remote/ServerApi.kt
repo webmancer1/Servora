@@ -5,7 +5,7 @@ import com.example.servora.data.model.ServerMetrics
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
-import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import retrofit2.Retrofit
@@ -67,14 +67,16 @@ class ApiFactory @Inject constructor() {
                 .addInterceptor(ApiKeyInterceptor(apiKey))
                 .build()
 
+            val contentType = MediaType.parse("application/json")!!
             Retrofit.Builder()
                 .baseUrl(baseUrl.ensureTrailingSlash())
                 .client(client)
-                .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+                .addConverterFactory(json.asConverterFactory(contentType))
                 .build()
                 .create(ServerApi::class.java)
         }
     }
+
 
     private fun String.ensureTrailingSlash(): String =
         if (endsWith("/")) this else "$this/"
