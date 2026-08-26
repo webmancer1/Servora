@@ -70,6 +70,16 @@ import com.example.servora.ui.theme.TextPrimary
 import com.example.servora.ui.theme.TextSecondary
 import com.example.servora.ui.theme.TextTertiary
 
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+
 @Composable
 fun ServerDetailScreen(
     onBackClick: () -> Unit,
@@ -77,6 +87,8 @@ fun ServerDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val server = uiState.server
+    var processToKill by remember { mutableStateOf<ProcessInfo?>(null) }
+    var showRebootConfirm by remember { mutableStateOf(false) }
 
     if (server == null) {
         Box(
@@ -92,164 +104,247 @@ fun ServerDetailScreen(
 
     val statusColor = getStatusColor(server.status)
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy),
-        contentPadding = PaddingValues(bottom = 32.dp)
-    ) {
-        item { DetailHeader(server.name, server.ipAddress, server.location, server.type, onBackClick) }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
+            contentPadding = PaddingValues(bottom = 32.dp)
+        ) {
+            item { DetailHeader(server.name, server.ipAddress, server.location, server.type, onBackClick) }
 
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                StatusBadge(status = server.status)
-                Text(
-                    text = "Uptime: ${formatUptime(server.metrics.uptime)}",
-                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = MonoFontFamily),
-                    color = TextSecondary
-                )
-            }
-        }
-
-        item {
-            SectionLabel("System Resources")
-        }
-
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                GaugeChart(
-                    value = server.metrics.cpuUsage,
-                    label = "CPU",
-                    size = 110.dp,
-                    strokeWidth = 10.dp,
-                    startColor = GaugeCpuStart,
-                    endColor = GaugeCpuEnd,
-                    isLarge = true
-                )
-                GaugeChart(
-                    value = server.metrics.memoryUsage,
-                    label = "Memory",
-                    size = 110.dp,
-                    strokeWidth = 10.dp,
-                    startColor = GaugeMemoryStart,
-                    endColor = GaugeMemoryEnd,
-                    isLarge = true
-                )
-                GaugeChart(
-                    value = server.metrics.diskUsage,
-                    label = "Disk",
-                    size = 110.dp,
-                    strokeWidth = 10.dp,
-                    startColor = GaugeDiskStart,
-                    endColor = GaugeDiskEnd,
-                    isLarge = true
-                )
-            }
-        }
-
-        item {
-            SectionLabel("Performance Metrics")
-        }
-
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                MetricCard(
-                    icon = Icons.Default.Timer,
-                    label = "Response",
-                    value = "${server.metrics.responseTime}",
-                    unit = "ms",
-                    accentColor = NeonCyan,
-                    modifier = Modifier.weight(1f)
-                )
-                MetricCard(
-                    icon = Icons.Default.Speed,
-                    label = "Req/s",
-                    value = "${server.metrics.requestsPerSecond}",
-                    accentColor = MintGreen,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-
-        item { Spacer(modifier = Modifier.height(12.dp)) }
-
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                MetricCard(
-                    icon = Icons.Default.Hub,
-                    label = "Connections",
-                    value = "${server.metrics.activeConnections}",
-                    accentColor = ElectricBlue,
-                    modifier = Modifier.weight(1f)
-                )
-                MetricCard(
-                    icon = Icons.Default.Memory,
-                    label = "Memory",
-                    value = String.format("%.1f", server.metrics.memoryUsed),
-                    unit = "/ ${server.metrics.memoryTotal.toInt()} GB",
-                    accentColor = GaugeMemoryStart,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-
-        item {
-            SectionLabel("Network I/O")
-        }
-
-        item {
-            NetworkChart(
-                networkInHistory = server.metrics.networkInHistory,
-                networkOutHistory = server.metrics.networkOutHistory,
-                currentIn = server.metrics.networkIn,
-                currentOut = server.metrics.networkOut
-            )
-        }
-
-        item {
-            SectionLabel("Top Processes")
-        }
-
-        items(uiState.processes) { process ->
-            ProcessRow(process = process)
-        }
-
-        if (uiState.alerts.isNotEmpty()) {
             item {
-                SectionLabel("Alerts")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    StatusBadge(status = server.status)
+                    Text(
+                        text = "Uptime: ${formatUptime(server.metrics.uptime)}",
+                        style = MaterialTheme.typography.labelMedium.copy(fontFamily = MonoFontFamily),
+                        color = TextSecondary
+                    )
+                }
             }
 
-            items(uiState.alerts) { alert ->
-                DetailAlertRow(
-                    severity = alert.severity,
-                    message = alert.message,
-                    timeAgo = formatTimeAgoDetail(alert.timestamp)
+            item {
+                SectionLabel("System Resources")
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    GaugeChart(
+                        value = server.metrics.cpuUsage,
+                        label = "CPU",
+                        size = 110.dp,
+                        strokeWidth = 10.dp,
+                        startColor = GaugeCpuStart,
+                        endColor = GaugeCpuEnd,
+                        isLarge = true
+                    )
+                    GaugeChart(
+                        value = server.metrics.memoryUsage,
+                        label = "Memory",
+                        size = 110.dp,
+                        strokeWidth = 10.dp,
+                        startColor = GaugeMemoryStart,
+                        endColor = GaugeMemoryEnd,
+                        isLarge = true
+                    )
+                    GaugeChart(
+                        value = server.metrics.diskUsage,
+                        label = "Disk",
+                        size = 110.dp,
+                        strokeWidth = 10.dp,
+                        startColor = GaugeDiskStart,
+                        endColor = GaugeDiskEnd,
+                        isLarge = true
+                    )
+                }
+            }
+
+            item {
+                SectionLabel("Performance Metrics")
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    MetricCard(
+                        icon = Icons.Default.Timer,
+                        label = "Response",
+                        value = "${server.metrics.responseTime}",
+                        unit = "ms",
+                        accentColor = NeonCyan,
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricCard(
+                        icon = Icons.Default.Speed,
+                        label = "Req/s",
+                        value = "${server.metrics.requestsPerSecond}",
+                        accentColor = MintGreen,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(12.dp)) }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    MetricCard(
+                        icon = Icons.Default.Hub,
+                        label = "Connections",
+                        value = "${server.metrics.activeConnections}",
+                        accentColor = ElectricBlue,
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricCard(
+                        icon = Icons.Default.Memory,
+                        label = "Memory",
+                        value = String.format("%.1f", server.metrics.memoryUsed),
+                        unit = "/ ${server.metrics.memoryTotal.toInt()} GB",
+                        accentColor = GaugeMemoryStart,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            item {
+                SectionLabel("Network I/O")
+            }
+
+            item {
+                NetworkChart(
+                    networkInHistory = server.metrics.networkInHistory,
+                    networkOutHistory = server.metrics.networkOutHistory,
+                    currentIn = server.metrics.networkIn,
+                    currentOut = server.metrics.networkOut
                 )
+            }
+
+            item {
+                SectionLabel("Remote Management")
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = { showRebootConfirm = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = CoralRed.copy(alpha = 0.2f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.PowerSettingsNew, contentDescription = null, tint = CoralRed, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Reboot Server", color = CoralRed, style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            }
+
+            item {
+                SectionLabel("Top Processes")
+            }
+
+            items(uiState.processes) { process ->
+                ProcessRow(
+                    process = process,
+                    onKillClick = { processToKill = process }
+                )
+            }
+
+            if (uiState.alerts.isNotEmpty()) {
+                item {
+                    SectionLabel("Alerts")
+                }
+
+                items(uiState.alerts) { alert ->
+                    DetailAlertRow(
+                        severity = alert.severity,
+                        message = alert.message,
+                        timeAgo = formatTimeAgoDetail(alert.timestamp)
+                    )
+                }
+            }
+        }
+
+        uiState.actionMessage?.let { msg ->
+            Snackbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                containerColor = CardSurface,
+                contentColor = TextPrimary,
+                action = {
+                    TextButton(onClick = { viewModel.clearActionMessage() }) {
+                        Text("Dismiss", color = NeonCyan)
+                    }
+                }
+            ) {
+                Text(msg)
             }
         }
     }
+
+    if (showRebootConfirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showRebootConfirm = false },
+            title = { Text("Reboot Server?", color = TextPrimary) },
+            text = { Text("Are you sure you want to send a reboot instruction to ${server.name}?", color = TextSecondary) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRebootConfirm = false
+                    viewModel.rebootServer()
+                }) { Text("Reboot", color = CoralRed) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRebootConfirm = false }) { Text("Cancel", color = TextSecondary) }
+            },
+            containerColor = CardSurface
+        )
+    }
+
+    processToKill?.let { proc ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { processToKill = null },
+            title = { Text("Kill Process ${proc.name}?", color = TextPrimary) },
+            text = { Text("Sending SIGTERM to PID ${proc.pid} (${proc.name}). Continue?", color = TextSecondary) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val p = processToKill
+                    processToKill = null
+                    if (p != null) viewModel.killProcess(p.pid, p.name)
+                }) { Text("Kill Process", color = CoralRed) }
+            },
+            dismissButton = {
+                TextButton(onClick = { processToKill = null }) { Text("Cancel", color = TextSecondary) }
+            },
+            containerColor = CardSurface
+        )
+    }
 }
+
 
 @Composable
 private fun DetailHeader(
@@ -370,7 +465,10 @@ private fun NetworkChart(
 }
 
 @Composable
-private fun ProcessRow(process: ProcessInfo) {
+private fun ProcessRow(
+    process: ProcessInfo,
+    onKillClick: () -> Unit = {}
+) {
     val shape = RoundedCornerShape(12.dp)
     Row(
         modifier = Modifier
@@ -383,11 +481,24 @@ private fun ProcessRow(process: ProcessInfo) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = process.name,
-                style = MaterialTheme.typography.labelLarge.copy(fontFamily = MonoFontFamily),
-                color = TextPrimary
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = process.name,
+                    style = MaterialTheme.typography.labelLarge.copy(fontFamily = MonoFontFamily),
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Kill",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = CoralRed,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(CoralRed.copy(alpha = 0.12f))
+                        .clickable { onKillClick() }
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
             Text(
                 text = "PID: ${process.pid}",
                 style = MaterialTheme.typography.labelSmall,
@@ -448,6 +559,7 @@ private fun ProcessRow(process: ProcessInfo) {
         }
     }
 }
+
 
 @Composable
 private fun DetailAlertRow(severity: AlertSeverity, message: String, timeAgo: String) {
