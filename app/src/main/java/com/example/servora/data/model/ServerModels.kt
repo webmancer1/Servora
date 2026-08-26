@@ -48,6 +48,8 @@ data class AlertItem(
     val serverName: String,
     val severity: AlertSeverity,
     val message: String,
+    @kotlinx.serialization.Transient val dbId: Long = 0L,
+    @kotlinx.serialization.Transient val isRead: Boolean = false,
     val timestamp: Long
 )
 
