@@ -49,7 +49,7 @@ class ServerRepository @Inject constructor(
     private val statusEvaluator: StatusEvaluator,
     private val apiFactory: ApiFactory,
     private val notificationHelper: NotificationHelper,
-    @ApplicationScope private val scope: CoroutineScope
+    @param:ApplicationScope private val scope: CoroutineScope
 ) {
 
     private val liveServers = MutableStateFlow<List<Server>>(emptyList())
